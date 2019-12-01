@@ -1,30 +1,26 @@
 open Base
+open Result.Monad_infix
 
 let empty = Map.empty (module Char)
 
-let is_valid_dna = function
-| 'A' -> Ok 'A'
-| 'C' -> Ok 'C'
-| 'G' -> Ok 'G'
-| 'T' -> Ok 'T'
+let is_valid_nucleotide = function
+| 'A' | 'C' | 'G' | 'T' -> Ok ()
 | x -> Error x
 
+let fold_nucleotide s ~f ~init =
+  String.fold s ~init:init ~f: (fun acc dna ->
+    is_valid_nucleotide dna >>= fun _ ->
+    acc >>= fun a ->
+      Ok (f a dna)
+  )
+
 let count_nucleotide s c =
-  match is_valid_dna c with
-  | Error c -> Error c
-  | Ok c -> let f acc i = match (acc, is_valid_dna i) with
-    | (Error e, _) -> Error e
-    | (_, Error i) -> Error i
-    | (Ok a, Ok d) -> if (Char.equal d c) then Ok (a + 1) else Ok a
-    in
-      String.fold s ~init:(Ok 0) ~f
+  is_valid_nucleotide c >>= fun _ ->
+  fold_nucleotide s ~init:(Ok 0) ~f:(fun acc dna ->
+    if (Char.equal dna c) then acc + 1 else acc
+  )
 
 let count_nucleotides s =
-  let f acc i = match (acc, is_valid_dna i) with
-  | (Error e, _) -> Error e
-  | (_, Error i) -> Error i
-  | (Ok a, Ok d) -> Ok (
-    Map.update a d ~f: (function None -> 1 | Some v -> v + 1)
+  fold_nucleotide s ~init:(Ok empty) ~f:(fun acc dna ->
+    Map.update acc dna ~f: (function None -> 1 | Some v -> v + 1)
   )
-  in
-    String.fold s ~init:(Ok empty) ~f
