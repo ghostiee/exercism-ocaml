@@ -25,7 +25,7 @@ let validate_from_target from target =
 let rec validate_digits from = function
   | [] -> Some([])
   | h::_ when h < 0 || h >= from -> None
-  | h::t -> validate_digits from t
+  | _::t -> validate_digits from t
 
 let convert_bases ~from ~digits ~target =
   validate_from_target from target >>=
